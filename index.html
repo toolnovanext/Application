@@ -1,152 +1,91 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hani Boys GPT</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Honey GPT</title>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', sans-serif;
-    }
     body {
-      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
-      color: #ffffff;
-      padding: 20px;
-      transition: all 0.3s ease-in-out;
-    }
-    .app-header {
+      background-color: #121212;
+      color: #fff;
+      font-family: 'Poppins', sans-serif;
       text-align: center;
-      padding: 30px 0;
-      animation: fadeIn 1s ease-in-out;
+      padding: 2rem;
     }
-    .app-header h1 {
-      font-size: 2.5rem;
-      color: #f9d342;
-      text-shadow: 0 0 10px #f9d342;
+    h1 {
+      color: #FFD700;
     }
-    .app-header h2 {
-      margin-top: 10px;
-      font-size: 1.2rem;
-      color: #d1d1d1;
+    .subtitle, .credit, .feature {
+      margin: 0.5rem 0;
     }
-    .developer-info, .team-info {
-      text-align: center;
-      margin-top: 10px;
-      font-size: 1rem;
-      color: #ccc;
-    }
-    .features-section {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin: 30px 0;
-      flex-wrap: wrap;
-    }
-    .feature-text {
-      flex: 1;
-      font-size: 1.1rem;
-      color: #aaffaa;
-      padding: 10px;
-    }
-    .voice-select {
-      flex: 1;
-      padding: 10px;
+    .voice-select, .microphone-btn {
+      margin-top: 2rem;
     }
     select, button {
-      padding: 10px;
+      padding: 0.5rem 1rem;
       border-radius: 10px;
       border: none;
       font-size: 1rem;
-    }
-    .mic-button {
-      background-color: #ff6f61;
-      color: white;
-      margin: 10px;
-      box-shadow: 0 0 10px #ff6f61;
+      background-color: #FFD700;
+      color: #121212;
       cursor: pointer;
-      transition: background 0.3s;
+      transition: background-color 0.3s;
     }
-    .mic-button:hover {
-      background-color: #ff3b2e;
+    button:hover {
+      background-color: #e0c000;
     }
-    .text-display, .ai-response {
-      display: none;
-      background-color: #333;
-      padding: 15px;
-      margin: 10px 0;
-      border-radius: 10px;
-      box-shadow: 0 0 10px #222;
-    }
-    .play-button {
-      background-color: #4caf50;
-      color: white;
-      padding: 10px;
-      border-radius: 8px;
-      margin-top: 10px;
-      box-shadow: 0 0 10px #4caf50;
-      cursor: pointer;
-    }
-    @keyframes fadeIn {
-      from {opacity: 0;}
-      to {opacity: 1;}
+    .output-text {
+      margin-top: 2rem;
+      font-size: 1.1rem;
+      color: #90ee90;
     }
   </style>
 </head>
 <body>
-  <div class="app-header">
-    <h1>Honey Voice GPT</h1>
-    <div class="developer-info">Developed by Abu Hanifa Shiuli & S M Ripon</div>
-    <div class="team-info">Team: Accessible Resource</div>
+  <h1>Honey GPT</h1>
+  <div class="subtitle">Realizing Dreams Through the Touch of Technology</div>
+  <div class="credit">Developed by Abu Hanifa Shiuli & S M Ripon</div>
+  <div class="credit">Powered by Accessible Resource</div>
+  <div class="feature">Speak and receive real-time answers in a natural female voice.</div>
+
+  <div class="voice-select">
+    <label for="voice">Choose a Voice:</label>
+    <select id="voice">
+      <option value="nova">Nova</option>
+      <option value="shimmer">Shimmer</option>
+    </select>
   </div>
-  <div class="features-section">
-    <div class="feature-text">Smart voice assistant with sweet and natural female voices.</div>
-    <div class="voice-select">
-      <label for="voice">Choose a Female Voice:</label>
-      <select id="voice">
-        <option value="nova">Nova</option>
-        <option value="shimmer">Shimmer</option>
-      </select>
-    </div>
+
+  <div class="microphone-btn">
+    <button onclick="startRecognition()">🎤 Start Talking</button>
   </div>
-  <div style="text-align: center;">
-    <button class="mic-button" onclick="startListening()">🎤 Start Talking</button>
-  </div>
-  <div class="text-display" id="userTextBlock">
-    <strong>You said:</strong>
-    <p id="userText"></p>
-  </div>
-  <div class="ai-response" id="aiResponseBlock">
-    <strong>AI Response:</strong>
-    <p id="aiText"></p>
-    <button class="play-button">▶️ Play Voice</button>
-  </div>
+
+  <div class="output-text" id="userText"></div>
 
   <script>
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = 'en-US';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-
-    function startListening() {
+    function startRecognition() {
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = "en-US";
       recognition.start();
+
+      recognition.onresult = function(event) {
+        const text = event.results[0][0].transcript;
+        document.getElementById("userText").textContent = "You said: " + text;
+        processVoice(text);
+      };
+
+      recognition.onerror = function() {
+        alert("Microphone error. Please ensure permission is granted.");
+      };
     }
 
-    recognition.onresult = function(event) {
-      const transcript = event.results[0][0].transcript;
-      document.getElementById("userText").innerText = transcript;
-      document.getElementById("userTextBlock").style.display = "block";
-      document.getElementById("aiResponseBlock").style.display = "block";
-
-      // Placeholder AI response
-      document.getElementById("aiText").innerText = "I'm here to help you!";
-    };
-
-    recognition.onerror = function(event) {
-      alert('Error occurred in recognition: ' + event.error);
-    };
+    function processVoice(text) {
+      const voice = document.getElementById("voice").value;
+      const encodedText = encodeURIComponent(text);
+      const url = `https://text.pollinations.ai/${encodedText}?model=openai-audio&voice=${voice}`;
+      const audio = new Audio(url);
+      audio.play();
+    }
   </script>
 </body>
 </html>
