@@ -4,90 +4,76 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Honey GPT</title>
-  <script src="https://toolnovanext.github.io/scripts/navigation.js" defer></script>
-  <script src="https://toolnovanext.github.io/scripts/notification.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js" defer></script>
+  <script defer src="https://toolnovanext.github.io/scripts/navigation.js"></script>
+  <script defer src="https://toolnovanext.github.io/scripts/notification.js"></script>
+
   <style>
-    body {
-      background-color: #121212;
-      color: #fff;
-      font-family: 'Poppins', sans-serif;
-      text-align: center;
-      padding: 2rem;
-    }
-    h1 {
-      color: #FFD700;
-    }
-    .subtitle, .credit, .feature {
-      margin: 0.5rem 0;
-    }
-    .voice-select, .microphone-btn {
-      margin-top: 2rem;
-    }
-    select, button {
-      padding: 0.5rem 1rem;
-      border-radius: 10px;
-      border: none;
-      font-size: 1rem;
-      background-color: #FFD700;
-      color: #121212;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-    button:hover {
-      background-color: #e0c000;
-    }
-    .output-text {
-      margin-top: 2rem;
-      font-size: 1.1rem;
-      color: #90ee90;
-    }
+    body{background-color:#121212;color:#fff;font-family:Poppins, sans-serif;text-align:center;padding:2rem}
+    h1{color:#FFD700}
+    .subtitle,.credit,.feature{margin:.5rem 0}
+    .controls{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:1.5rem}
+    select,button{padding:.5rem 1rem;border-radius:10px;border:none;font-size:1rem;background-color:#FFD700;color:#121212;cursor:pointer;transition:background-color .2s}
+    button:hover{background-color:#e0c000}
+    .output-text{margin-top:1.5rem;font-size:1.05rem;color:#90ee90}
+    .switch{display:inline-flex;align-items:center;gap:.5rem}
+    .switch input{appearance:none;width:44px;height:26px;background:#ccc;border-radius:999px;position:relative;cursor:pointer;outline:none}
+    .switch input:after{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .15s}
+    .switch input:checked{background:#4caf50}
+    .switch input:checked:after{transform:translateX(18px)}
   </style>
 </head>
 <body>
-  <h1>Honey GPT</h1>
-  <div class="subtitle">Realizing Dreams Through the Touch of Technology</div>
-  <div class="credit">Developed by Abu Hanifa Shiuli & S M Ripon</div>
-  <div class="credit">Powered by Accessible Resource</div>
+
   <div class="feature">Speak and receive real-time answers in a natural female voice.</div>
 
-  <div class="voice-select">
-    <label for="voice">Choose a Voice:</label>
-    <select id="voice">
-      <option value="nova">Nova</option>
-      <option value="shimmer">Shimmer</option>
-    </select>
-  </div>
-
-  <div class="microphone-btn">
-    <button onclick="startRecognition()">🎤 Start Talking</button>
+  <div class="controls">
+    <div>
+      <label for="voice">Voice</label>
+      <select id="voice">
+        <option value="nova">Nova</option>
+        <option value="shimmer">Shimmer</option>
+      </select>
+    </div>
+    <div>
+      <label for="lang">Recognition Language</label>
+      <select id="lang">
+        <option value="en-US">English (US)</option>
+        <option value="hi-IN">Hindi (India)</option>
+        <option value="ne-NP">Nepali (Nepal)</option>
+        <option value="ma-IN">Maithili (India)</option>
+      </select>
+    </div>
+    <div>
+      <button id="micBtn">🎤 Start Talking</button>
+    </div>
+    <div class="switch">
+      <label for="loopSwitch">Auto Loop</label>
+      <input id="loopSwitch" type="checkbox" role="switch" aria-checked="false" />
+    </div>
   </div>
 
   <div class="output-text" id="userText"></div>
 
   <script>
-    function startRecognition() {
-      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-      recognition.lang = "en-US";
-      recognition.start();
-
-      recognition.onresult = function(event) {
-        const text = event.results[0][0].transcript;
-        document.getElementById("userText").textContent = "You said: " + text;
-        processVoice(text);
-      };
-
-      recognition.onerror = function() {
-        alert("Microphone error. Please ensure permission is granted.");
-      };
-    }
-
-    function processVoice(text) {
-      const voice = document.getElementById("voice").value;
-      const encodedText = encodeURIComponent(text);
-      const url = `https://text.pollinations.ai/${encodedText}?model=openai-audio&voice=${voice}`;
-      const audio = new Audio(url);
-      audio.play();
-    }
+    let audioCtx = null
+    let recognition = null
+    const cache = new Map()
+    const micBtn = document.getElementById('micBtn')
+    const userTextEl = document.getElementById('userText')
+    const loopSwitch = document.getElementById('loopSwitch')
+    const voiceSelect = document.getElementById('voice')
+    const langSelect = document.getElementById('lang')
+    let listening = false
+    function ensureAudioCtx(){if(!audioCtx){audioCtx=new (window.AudioContext||window.webkitAudioContext)();audioCtx.resume()}}
+    function createRecognition(){const R=window.SpeechRecognition||window.webkitSpeechRecognition;recognition=new R();recognition.interimResults=false;recognition.maxAlternatives=1;recognition.lang=langSelect.value;recognition.onresult=(e)=>{const txt=e.results[0][0].transcript;userTextEl.textContent='You said: '+txt;handleText(txt)};recognition.onerror=()=>{stopRecognition()};recognition.onend=()=>{if(listening && loopSwitch.checked){startRecognition()}}}
+    async function handleText(text){ensureAudioCtx();const voice=voiceSelect.value;const encoded=encodeURIComponent(text);const url=`https://text.pollinations.ai/${encoded}?model=openai-audio&voice=${voice}`;if(cache.has(url)){playBuffer(cache.get(url));return}try{const resp=await axios.get(url,{responseType:'arraybuffer',timeout:20000});const audioData=resp.data;const buf=await audioCtx.decodeAudioData(audioData.slice(0));cache.set(url,buf);playBuffer(buf)}catch(e){console.error(e)} }
+    function playBuffer(buffer){const src=audioCtx.createBufferSource();src.buffer=buffer;src.connect(audioCtx.destination);src.onended=()=>{if(loopSwitch.checked){setTimeout(()=>{startRecognition()},120)}else{listening=false;micBtn.textContent='🎤 Start Talking'}};src.start(0)}
+    function startRecognition(){if(listening)return;ensureAudioCtx();if(!recognition)createRecognition();recognition.lang=langSelect.value;listening=true;micBtn.textContent='🛑 Listening...';recognition.start()}
+    function stopRecognition(){if(!listening)return;listening=false;try{recognition.stop()}catch(e){}micBtn.textContent='🎤 Start Talking'}
+    micBtn.addEventListener('click',()=>{if(!listening){loopSwitch.checked?startRecognition():startRecognition()}else{stopRecognition()}})
+    loopSwitch.addEventListener('change',()=>{loopSwitch.setAttribute('aria-checked',loopSwitch.checked);if(loopSwitch.checked && !listening){startRecognition()}})
+    langSelect.addEventListener('change',()=>{if(recognition)recognition.lang=langSelect.value})
   </script>
 </body>
 </html>
