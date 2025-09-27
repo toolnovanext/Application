@@ -1,79 +1,465 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Honey GPT</title>
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js" defer></script>
-  <script defer src="https://toolnovanext.github.io/scripts/navigation.js"></script>
-  <script defer src="https://toolnovanext.github.io/scripts/notification.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Honey GPT - Global Voice Assistant</title>
+    <script defer src="https://toolnovanext.github.io/scripts/navigation.js"></script>
+    <script defer src="https://toolnovanext.github.io/scripts/notification.js"></script>
 
-  <style>
-    body{background-color:#121212;color:#fff;font-family:Poppins, sans-serif;text-align:center;padding:2rem}
-    h1{color:#FFD700}
-    .subtitle,.credit,.feature{margin:.5rem 0}
-    .controls{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:1.5rem}
-    select,button{padding:.5rem 1rem;border-radius:10px;border:none;font-size:1rem;background-color:#FFD700;color:#121212;cursor:pointer;transition:background-color .2s}
-    button:hover{background-color:#e0c000}
-    .output-text{margin-top:1.5rem;font-size:1.05rem;color:#90ee90}
-    .switch{display:inline-flex;align-items:center;gap:.5rem}
-    .switch input{appearance:none;width:44px;height:26px;background:#ccc;border-radius:999px;position:relative;cursor:pointer;outline:none}
-    .switch input:after{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .15s}
-    .switch input:checked{background:#4caf50}
-    .switch input:checked:after{transform:translateX(18px)}
-  </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --primary-color: #FFD700;
+            --primary-hover: #e6c300;
+            --dark-accent: #1e1e1e;
+            --success-color: #90ee90;
+            --error-color: #ff8a80;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Poppins', sans-serif;
+            text-align: center;
+            padding: 1rem;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            padding: 1rem;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .feature {
+            font-style: italic;
+            margin-bottom: 2rem;
+            color: #b0b0b0;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background-color: var(--dark-accent);
+            border-radius: 1rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        select, button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            border: none;
+            font-size: 1rem;
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--primary-color);
+            color: var(--bg-color);
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        select {
+            max-width: 200px;
+        }
+
+        button:hover, select:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+
+        .output-container {
+            margin-top: 2rem;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .status-text {
+            font-size: 1.1rem;
+            transition: color 0.3s;
+            height: 2rem;
+        }
+        .status-text.user { color: var(--text-color); }
+        .status-text.thinking { color: var(--primary-color); }
+        .status-text.error { color: var(--error-color); }
+        .status-text.success { color: var(--success-color); }
+
+        .switch {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .switch input {
+            appearance: none;
+            width: 44px;
+            height: 26px;
+            background: #4d4d4d;
+            border-radius: 999px;
+            position: relative;
+            cursor: pointer;
+            outline: none;
+            transition: background-color 0.15s;
+        }
+
+        .switch input::after {
+            content: '';
+            position: absolute;
+            left: 3px;
+            top: 3px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #fff;
+            transition: transform 0.15s ease-in-out;
+        }
+
+        .switch input:checked {
+            background: #4caf50;
+        }
+
+        .switch input:checked::after {
+            transform: translateX(18px);
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 215, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
+        }
+
+        .listening-state {
+            animation: pulse 1.5s infinite;
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <h1>Honey GPT</h1>
+        <div class="subtitle">Global Voice Assistant</div>
+        <div class="feature">Speak and receive real-time answers in a natural voice.</div>
 
-  <div class="feature">Speak and receive real-time answers in a natural female voice.</div>
+        <div class="controls">
+            <div class="control-group">
+                <label for="voice">Assistant Voice</label>
+                <select id="voice">
+                    <option value="nova">Nova</option>
+                    <option value="shimmer">Shimmer</option>
+                    <option value="alloy">Alloy</option>
+                    <option value="echo">Echo</option>
+                    <option value="fable">Fable</option>
+                    <option value="onyx">Onyx</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="lang">Recognition Language</label>
+                <select id="lang"></select>
+            </div>
+            <div class="control-group">
+                <label for="loopSwitch">Auto Loop</label>
+                <div class="switch">
+                    <input id="loopSwitch" type="checkbox" role="switch" aria-checked="false" />
+                </div>
+            </div>
+        </div>
 
-  <div class="controls">
-    <div>
-      <label for="voice">Voice</label>
-      <select id="voice">
-        <option value="nova">Nova</option>
-        <option value="shimmer">Shimmer</option>
-      </select>
+        <div class="output-container">
+            <button id="micBtn">🎤 Start Talking</button>
+            <p id="statusText" class="status-text"></p>
+        </div>
     </div>
-    <div>
-      <label for="lang">Recognition Language</label>
-      <select id="lang">
-        <option value="en-US">English (US)</option>
-        <option value="hi-IN">Hindi (India)</option>
-        <option value="ne-NP">Nepali (Nepal)</option>
-        <option value="ma-IN">Maithili (India)</option>
-      </select>
-    </div>
-    <div>
-      <button id="micBtn">🎤 Start Talking</button>
-    </div>
-    <div class="switch">
-      <label for="loopSwitch">Auto Loop</label>
-      <input id="loopSwitch" type="checkbox" role="switch" aria-checked="false" />
-    </div>
-  </div>
 
-  <div class="output-text" id="userText"></div>
+    <script>
+        (function () {
+            "use strict";
+            const micBtn = document.getElementById('micBtn');
+            const statusTextEl = document.getElementById('statusText');
+            const loopSwitch = document.getElementById('loopSwitch');
+            const voiceSelect = document.getElementById('voice');
+            const langSelect = document.getElementById('lang');
 
-  <script>
-    let audioCtx = null
-    let recognition = null
-    const cache = new Map()
-    const micBtn = document.getElementById('micBtn')
-    const userTextEl = document.getElementById('userText')
-    const loopSwitch = document.getElementById('loopSwitch')
-    const voiceSelect = document.getElementById('voice')
-    const langSelect = document.getElementById('lang')
-    let listening = false
-    function ensureAudioCtx(){if(!audioCtx){audioCtx=new (window.AudioContext||window.webkitAudioContext)();audioCtx.resume()}}
-    function createRecognition(){const R=window.SpeechRecognition||window.webkitSpeechRecognition;recognition=new R();recognition.interimResults=false;recognition.maxAlternatives=1;recognition.lang=langSelect.value;recognition.onresult=(e)=>{const txt=e.results[0][0].transcript;userTextEl.textContent='You said: '+txt;handleText(txt)};recognition.onerror=()=>{stopRecognition()};recognition.onend=()=>{if(listening && loopSwitch.checked){startRecognition()}}}
-    async function handleText(text){ensureAudioCtx();const voice=voiceSelect.value;const encoded=encodeURIComponent(text);const url=`https://text.pollinations.ai/${encoded}?model=openai-audio&voice=${voice}`;if(cache.has(url)){playBuffer(cache.get(url));return}try{const resp=await axios.get(url,{responseType:'arraybuffer',timeout:20000});const audioData=resp.data;const buf=await audioCtx.decodeAudioData(audioData.slice(0));cache.set(url,buf);playBuffer(buf)}catch(e){console.error(e)} }
-    function playBuffer(buffer){const src=audioCtx.createBufferSource();src.buffer=buffer;src.connect(audioCtx.destination);src.onended=()=>{if(loopSwitch.checked){setTimeout(()=>{startRecognition()},120)}else{listening=false;micBtn.textContent='🎤 Start Talking'}};src.start(0)}
-    function startRecognition(){if(listening)return;ensureAudioCtx();if(!recognition)createRecognition();recognition.lang=langSelect.value;listening=true;micBtn.textContent='🛑 Listening...';recognition.start()}
-    function stopRecognition(){if(!listening)return;listening=false;try{recognition.stop()}catch(e){}micBtn.textContent='🎤 Start Talking'}
-    micBtn.addEventListener('click',()=>{if(!listening){loopSwitch.checked?startRecognition():startRecognition()}else{stopRecognition()}})
-    loopSwitch.addEventListener('change',()=>{loopSwitch.setAttribute('aria-checked',loopSwitch.checked);if(loopSwitch.checked && !listening){startRecognition()}})
-    langSelect.addEventListener('change',()=>{if(recognition)recognition.lang=langSelect.value})
-  </script>
+            let audioCtx = null;
+            let recognition = null;
+            let isListening = false;
+            const audioCache = new Map();
+
+            const languages = [
+                { name: "Afrikaans (Suid-Afrika)", code: "af-ZA" }, { name: "አማርኛ (ኢትዮጵያ)", code: "am-ET" },
+                { name: "Հայերեն (Հայաստան)", code: "hy-AM" }, { name: "Azərbaycanca (Azərbaycan)", code: "az-AZ" },
+                { name: "Bahasa Indonesia (Indonesia)", code: "id-ID" }, { name: "Bahasa Melayu (Malaysia)", code: "ms-MY" },
+                { name: "বাংলা (বাংলাদেশ)", code: "bn-BD" }, { name: "বাংলা (ভারত)", code: "bn-IN" },
+                { name: "Català (Espanya)", code: "ca-ES" }, { name: "Čeština (Česká republika)", code: "cs-CZ" },
+                { name: "Dansk (Danmark)", code: "da-DK" }, { name: "Deutsch (Deutschland)", code: "de-DE" },
+                { name: "English (Australia)", code: "en-AU" }, { name: "English (Canada)", code: "en-CA" },
+                { name: "English (Ghana)", code: "en-GH" }, { name: "English (Great Britain)", code: "en-GB" },
+                { name: "English (India)", code: "en-IN" }, { name: "English (Ireland)", code: "en-IE" },
+                { name: "English (Kenya)", code: "en-KE" }, { name: "English (New Zealand)", code: "en-NZ" },
+                { name: "English (Nigeria)", code: "en-NG" }, { name: "English (Philippines)", code: "en-PH" },
+                { name: "English (South Africa)", code: "en-ZA" }, { name: "English (Tanzania)", code: "en-TZ" },
+                { name: "English (United States)", code: "en-US" }, { name: "Español (Argentina)", code: "es-AR" },
+                { name: "Español (Bolivia)", code: "es-BO" }, { name: "Español (Chile)", code: "es-CL" },
+                { name: "Español (Colombia)", code: "es-CO" }, { name: "Español (Costa Rica)", code: "es-CR" },
+                { name: "Español (Ecuador)", code: "es-EC" }, { name: "Español (El Salvador)", code: "es-SV" },
+                { name: "Español (España)", code: "es-ES" }, { name: "Español (Estados Unidos)", code: "es-US" },
+                { name: "Español (Guatemala)", code: "es-GT" }, { name: "Español (Honduras)", code: "es-HN" },
+                { name: "Español (México)", code: "es-MX" }, { name: "Español (Nicaragua)", code: "es-NI" },
+                { name: "Español (Panamá)", code: "es-PA" }, { name: "Español (Paraguay)", code: "es-PY" },
+                { name: "Español (Perú)", code: "es-PE" }, { name: "Español (Puerto Rico)", code: "es-PR" },
+                { name: "Español (República Dominicana)", code: "es-DO" }, { name: "Español (Uruguay)", code: "es-UY" },
+                { name: "Español (Venezuela)", code: "es-VE" }, { name: "Euskara (Espainia)", code: "eu-ES" },
+                { name: "Filipino (Pilipinas)", code: "fil-PH" }, { name: "Français (Canada)", code: "fr-CA" },
+                { name: "Français (France)", code: "fr-FR" }, { name: "Galego (España)", code: "gl-ES" },
+                { name: "ქართული (საქართველო)", code: "ka-GE" }, { name: "ગુજરાતી (ભારત)", code: "gu-IN" },
+                { name: "Hrvatski (Hrvatska)", code: "hr-HR" }, { name: "IsiZulu (Ningizimu Afrika)", code: "zu-ZA" },
+                { name: "Íslenska (Ísland)", code: "is-IS" }, { name: "Italiano (Italia)", code: "it-IT" },
+                { name: "Jawa (Indonesia)", code: "jv-ID" }, { name: "ಕನ್ನಡ (ಭಾರತ)", code: "kn-IN" },
+                { name: "ភាសាខ្មែរ (កម្ពុជា)", code: "km-KH" }, { name: "ລາວ (ລາວ)", code: "lo-LA" },
+                { name: "Latviešu (Latvija)", code: "lv-LV" }, { name: "Lietuvių (Lietuva)", code: "lt-LT" },
+                { name: "Magyar (Magyarország)", code: "hu-HU" }, { name: "മലയാളം (ഇന്ത്യ)", code: "ml-IN" },
+                { name: "मराठी (भारत)", code: "mr-IN" }, { name: "Nederlands (Nederland)", code: "nl-NL" },
+                { name: "नेपाली (नेपाल)", code: "ne-NP" }, { name: "Norsk bokmål (Norge)", code: "nb-NO" },
+                { name: "Polski (Polska)", code: "pl-PL" }, { name: "Português (Brasil)", code: "pt-BR" },
+                { name: "Português (Portugal)", code: "pt-PT" }, { name: "Română (România)", code: "ro-RO" },
+                { name: "සිංහල (ශ්රී ලංකාව)", code: "si-LK" }, { name: "Slovenčina (Slovensko)", code: "sk-SK" },
+                { name: "Slovenščina (Slovenija)", code: "sl-SI" }, { name: "Urang (Indonesia)", code: "su-ID" },
+                { name: "Swahili (Tanzania)", code: "sw-TZ" }, { name: "Swahili (Kenya)", code: "sw-KE" },
+                { name: "Suomi (Suomi)", code: "fi-FI" }, { name: "Svenska (Sverige)", code: "sv-SE" },
+                { name: "தமிழ் (இந்தியா)", code: "ta-IN" }, { name: "தமிழ் (சிங்கப்பூர்)", code: "ta-SG" },
+                { name: "தமிழ் (இலங்கை)", code: "ta-LK" }, { name: "தமிழ் (மலேசியா)", code: "ta-MY" },
+                { name: "తెలుగు (భారతదేశం)", code: "te-IN" }, { name: "Tiếng Việt (Việt Nam)", code: "vi-VN" },
+                { name: "Türkçe (Türkiye)", code: "tr-TR" }, { name: "اردو (پاکستان)", code: "ur-PK" },
+                { name: "اردو (بھارت)", code: "ur-IN" }, { name: "Ελληνικά (Ελλάδα)", code: "el-GR" },
+                { name: "Български (България)", code: "bg-BG" }, { name: "Русский (Россия)", code: "ru-RU" },
+                { name: "Српски (Србија)", code: "sr-RS" }, { name: "Українська (Україна)", code: "uk-UA" },
+                { name: "עברית (ישראל)", code: "he-IL" }, { name: "العربية (إسرائيل)", code: "ar-IL" },
+                { name: "العربية (الأردن)", code: "ar-JO" }, { name: "العربية (الإمارات)", code: "ar-AE" },
+                { name: "العربية (البحرين)", code: "ar-BH" }, { name: "العربية (الجزائر)", code: "ar-DZ" },
+                { name: "العربية (السعودية)", code: "ar-SA" }, { name: "العربية (العراق)", code: "ar-IQ" },
+                { name: "العربية (الكويت)", code: "ar-KW" }, { name: "العربية (المغرب)", code: "ar-MA" },
+                { name: "العربية (تونس)", code: "ar-TN" }, { name: "العربية (عُمان)", code: "ar-OM" },
+                { name: "العربية (فلسطين)", code: "ar-PS" }, { name: "العربية (قطر)", code: "ar-QA" },
+                { name: "العربية (لبنان)", code: "ar-LB" }, { name: "العربية (مصر)", code: "ar-EG" },
+                { name: "فارسی (ایران)", code: "fa-IR" }, { name: "हिन्दी (भारत)", code: "hi-IN" },
+                { name: "ไทย (ประเทศไทย)", code: "th-TH" }, { name: "한국어 (대한민국)", code: "ko-KR" },
+                { name: "國語 (臺灣)", code: "zh-TW" }, { name: "廣東話 (香港)", code: "yue-Hant-HK" },
+                { name: "日本語 (日本)", code: "ja-JP" }, { name: "普通話 (香港)", code: "zh-HK" },
+                { name: "普通话 (中国大陆)", code: "zh-CN" },
+            ];
+            
+            const setStatus = (message, type = 'user') => {
+                statusTextEl.textContent = message;
+                statusTextEl.className = `status-text ${type}`;
+            };
+
+            const ensureAudioContext = () => {
+                if (!audioCtx) {
+                    try {
+                        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                        if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+                    } catch (e) {
+                        console.error("AudioContext is not supported.", e);
+                        setStatus("Browser audio is not supported.", "error");
+                    }
+                }
+            };
+
+            const getAndPlayTTS = async (text) => {
+                ensureAudioContext();
+                if (!audioCtx) return;
+
+                const voice = voiceSelect.value;
+                const encodedText = encodeURIComponent(text);
+                const apiUrl = `https://text.pollinations.ai/${encodedText}?model=openai-audio&voice=${voice}`;
+                
+                setStatus('Honey is thinking...', 'thinking');
+
+                if (audioCache.has(apiUrl)) {
+                    playAudioBuffer(audioCache.get(apiUrl));
+                    return;
+                }
+
+                try {
+                    const response = await axios.get(apiUrl, {
+                        responseType: 'arraybuffer',
+                        timeout: 30000
+                    });
+                    const decodedBuffer = await audioCtx.decodeAudioData(response.data);
+                    if (decodedBuffer.duration > 0.1) {
+                         audioCache.set(apiUrl, decodedBuffer);
+                    }
+                    playAudioBuffer(decodedBuffer);
+                } catch (error) {
+                    console.error('API Error:', error);
+                    let errorMessage = 'Sorry, I couldn\'t get a response.';
+                    if (error.response) {
+                        errorMessage += ` (Server Error ${error.response.status})`;
+                    } else if (error.code === 'ECONNABORTED') {
+                        errorMessage = 'The request timed out. Please try again.';
+                    }
+                    setStatus(errorMessage, "error");
+                    resetStateAfterError();
+                }
+            };
+
+            const playAudioBuffer = (buffer) => {
+                if (!audioCtx) return;
+                const source = audioCtx.createBufferSource();
+                source.buffer = buffer;
+                source.connect(audioCtx.destination);
+                source.onended = () => {
+                    if (loopSwitch.checked) {
+                        setTimeout(startRecognition, 200);
+                    } else {
+                        stopRecognition({ forceUIUpdate: true });
+                    }
+                };
+                source.start(0);
+            };
+
+            const handleRecognitionResult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                setStatus(`You said: "${transcript}"`, 'success');
+                stopRecognition();
+                getAndPlayTTS(transcript);
+            };
+
+            const setupRecognition = () => {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SpeechRecognition) {
+                    setStatus("Speech recognition not supported.", "error");
+                    micBtn.disabled = true;
+                    return false;
+                }
+                recognition = new SpeechRecognition();
+                recognition.interimResults = false;
+                recognition.maxAlternatives = 1;
+                
+                recognition.onresult = handleRecognitionResult;
+                recognition.onerror = (event) => {
+                    console.error('Speech recognition error:', event.error);
+                    const message = event.error === 'no-speech' ? 'I didn\'t hear anything. Try again.' : `Error: ${event.error}.`;
+                    setStatus(message, "error");
+                    resetStateAfterError();
+                };
+                recognition.onend = () => {
+                    if (isListening) {
+                        stopRecognition({ forceUIUpdate: true });
+                    }
+                };
+                return true;
+            };
+
+            const startRecognition = () => {
+                if (isListening) return;
+                ensureAudioContext();
+                if (!recognition) {
+                    if (!setupRecognition()) return;
+                }
+                isListening = true;
+                recognition.lang = langSelect.value;
+                micBtn.textContent = '🛑 Listening...';
+                micBtn.classList.add('listening-state');
+                setStatus('Speak now...', 'user');
+                try {
+                    recognition.start();
+                } catch (e) {
+                    console.error("Could not start recognition", e);
+                    stopRecognition({ forceUIUpdate: true });
+                }
+            };
+
+            const stopRecognition = (options = {}) => {
+                const { forceUIUpdate = false } = options;
+                if (!isListening && !forceUIUpdate) return;
+
+                isListening = false;
+                if (recognition) {
+                    try { recognition.stop(); } catch (e) { /* ignore */ }
+                }
+                micBtn.textContent = '🎤 Start Talking';
+                micBtn.classList.remove('listening-state');
+            };
+            
+            const resetStateAfterError = () => {
+                stopRecognition({ forceUIUpdate: true });
+                if (loopSwitch.checked) {
+                    setTimeout(startRecognition, 1500);
+                }
+            };
+
+            const initialize = () => {
+                langSelect.innerHTML = languages
+                    .map(lang => `<option value="${lang.code}">${lang.name}</option>`)
+                    .join('');
+                langSelect.value = 'ne-NP';
+                
+                micBtn.addEventListener('click', () => isListening ? stopRecognition() : startRecognition());
+                loopSwitch.addEventListener('change', () => {
+                    loopSwitch.setAttribute('aria-checked', String(loopSwitch.checked));
+                    if (loopSwitch.checked && !isListening) {
+                        startRecognition();
+                    }
+                });
+            };
+
+            initialize();
+        })();
+    </script>
 </body>
 </html>
+
